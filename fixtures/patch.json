@@ -1,0 +1,20 @@
+[
+  {
+    "op": "remove",
+    "path": "/author/familyName"
+  },
+  {
+    "op": "add",
+    "path": "/phoneNumber",
+    "value": "+01-123-456-7898"
+  },
+  {
+    "op": "remove",
+    "path": "/tags/1"
+  },
+  {
+    "op": "replace",
+    "path": "/title",
+    "value": "Hello!"
+  }
+]
