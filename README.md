@@ -1,6 +1,8 @@
 # json-patch-cli
 
-This project provides a CLI command `json-patch` which uses the brilliant work from the [`json-patch`](https://crates.io/crates/json-patch) crate to perform various patch related operations.
+A CLI command to perform JSON RFC 6902 patching, merging and editing operations.
+
+This project provides a CLI command `json-patch` which uses the brilliant work from the [`json-patch`](https://crates.io/crates/json-patch) crate.
 
 ## Usage
 

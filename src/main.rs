@@ -1,16 +1,15 @@
+use console::{style, Style};
 use std::path::PathBuf;
 use std::process::Stdio;
-use console::{style, Style};
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser};
-
 
 #[derive(clap::Parser)]
 #[clap(name = "json-patch")]
 struct Cli {
     #[command(subcommand)]
-    command: Command
+    command: Command,
 }
 
 #[derive(clap::Subcommand)]
@@ -22,7 +21,7 @@ enum Command {
     /// Edit a JSON (RFC 6902) patch, by editing a patched version of the input using a text editor.
     Edit(EditCommand),
     /// Generate command line completions script.
-    Completions(CompletionsCommand)
+    Completions(CompletionsCommand),
 }
 
 #[derive(clap::Args)]
@@ -32,12 +31,15 @@ struct DiffCommand {
 }
 
 fn diff_impl(command: DiffCommand) -> anyhow::Result<String> {
-    let from: serde_json::Value = serde_json::from_slice(&std::fs::read(command.from).context("Error reading from file")?).context("Error parsing from file as json")?;
-    let to: serde_json::Value = serde_json::from_slice(&std::fs::read(command.to).context("Error reading to file")?).context("Error parsing to file as json")?;
+    let from: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(command.from).context("Error reading from file")?)
+            .context("Error parsing from file as json")?;
+    let to: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(command.to).context("Error reading to file")?)
+            .context("Error parsing to file as json")?;
     let patch = json_patch::diff(&from, &to);
     serde_json::to_string_pretty(&patch).context("Error serializing patch")
 }
-
 
 fn diff(command: DiffCommand) -> anyhow::Result<()> {
     let patch_string = diff_impl(command)?;
@@ -53,8 +55,12 @@ struct ApplyCommand {
 }
 
 fn apply_impl(command: ApplyCommand) -> anyhow::Result<String> {
-    let mut document: serde_json::Value = serde_json::from_slice(&std::fs::read(command.input).context("Error reading from file")?).context("Error parsing input file as json")?;
-    let patch: json_patch::Patch = serde_json::from_slice(&std::fs::read(command.patch).context("Error reading patch file")?).context("Error parsing patch file as json")?;
+    let mut document: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(command.input).context("Error reading from file")?)
+            .context("Error parsing input file as json")?;
+    let patch: json_patch::Patch =
+        serde_json::from_slice(&std::fs::read(command.patch).context("Error reading patch file")?)
+            .context("Error parsing patch file as json")?;
     json_patch::patch(&mut document, &patch).context("Error applying patch")?;
     serde_json::to_string_pretty(&document).context("Error serializing output")
 }
@@ -108,14 +114,15 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
         if command.watch {
             let (tx, rx) = std::sync::mpsc::channel::<notify::Result<notify::Event>>();
             notify::recommended_watcher(tx)?;
-            s.spawn::<_, anyhow::Result<()>>(move || {
-                loop {
-                    if let Err(_) = rx.recv() {
-                        break Ok(())
-                    }
-                    let new_patch = diff_impl(DiffCommand { from: command.input.clone(), to: path.clone() })?;
-                    std::fs::write(command.patch.clone(), new_patch)?;
-                } 
+            s.spawn::<_, anyhow::Result<()>>(move || loop {
+                if let Err(_) = rx.recv() {
+                    break Ok(());
+                }
+                let new_patch = diff_impl(DiffCommand {
+                    from: command.input.clone(),
+                    to: path.clone(),
+                })?;
+                std::fs::write(command.patch.clone(), new_patch)?;
             });
         }
 
@@ -128,8 +135,11 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
             .status()
             .expect("failed to open vim");
 
-        let new_patch = diff_impl(DiffCommand { from: command.input.clone(), to: path.clone() })?;
-        
+        let new_patch = diff_impl(DiffCommand {
+            from: command.input.clone(),
+            to: path.clone(),
+        })?;
+
         let diff = similar::TextDiff::from_lines(&old_patch, &new_patch);
         for (idx, group) in diff.grouped_ops(3).iter().enumerate() {
             if idx > 0 {
@@ -176,7 +186,7 @@ struct CompletionsCommand {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Diff(command) =>  diff(command)?,
+        Command::Diff(command) => diff(command)?,
         Command::Apply(command) => apply(command)?,
         Command::Edit(command) => edit(command)?,
         Command::Completions(command) => {

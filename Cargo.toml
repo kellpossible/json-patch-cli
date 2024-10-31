@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 repository = "https://github.com/kellpossible/json-patch-cli"
 keywords = ["cli", "json", "merge", "patch"]
-description = "A command to perform JSON RFC 6902 patching, merging and editing operations"
+description = "A CLI command to perform JSON RFC 6902 patching, merging and editing operations"
 
 [[bin]]
 name = "json-patch"
