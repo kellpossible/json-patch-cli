@@ -5,7 +5,7 @@ set -euxo pipefail
 VERSION=${REF#"refs/tags/"}
 DIST=`pwd`/dist
 
-echo "Packaging just $VERSION for $TARGET..."
+echo "Packaging json-patch-cli $VERSION for $TARGET..."
 
 test -f Cargo.lock || cargo generate-lockfile
 
@@ -16,10 +16,10 @@ if [[ $TARGET == aarch64-unknown-linux-musl ]]; then
   export CC=aarch64-linux-gnu-gcc
 fi
 
-echo "Building just..."
+echo "Building json-patch-cli..."
 RUSTFLAGS="--deny warnings --codegen target-feature=+crt-static $TARGET_RUSTFLAGS" \
-  cargo build --bin just --target $TARGET --release
-EXECUTABLE=target/$TARGET/release/just
+  cargo build --bin json-patch --target $TARGET --release
+EXECUTABLE=target/$TARGET/release/json-patch
 
 if [[ $OS == windows-latest ]]; then
   EXECUTABLE=$EXECUTABLE.exe
@@ -39,12 +39,12 @@ cd $DIST
 echo "Creating release archive..."
 case $OS in
   ubuntu-latest | macos-latest)
-    ARCHIVE=just-$VERSION-$TARGET.tar.gz
+    ARCHIVE=json-patch-cli-$VERSION-$TARGET.tar.gz
     tar czf $ARCHIVE *
     echo "archive=$DIST/$ARCHIVE" >> $GITHUB_OUTPUT
     ;;
   windows-latest)
-    ARCHIVE=just-$VERSION-$TARGET.zip
+    ARCHIVE=json-patch-cli-$VERSION-$TARGET.zip
     7z a $ARCHIVE *
     echo "archive=`pwd -W`/$ARCHIVE" >> $GITHUB_OUTPUT
     ;;
