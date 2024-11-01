@@ -139,7 +139,7 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
         }
 
         // Spawn Vim as a child process
-        std::process::Command::new("vim")
+        std::process::Command::new(&command.editor)
             .arg(path)
             .stdin(Stdio::inherit())
             .stdout(Stdio::inherit())
