@@ -59,16 +59,26 @@ Options:
 ### `edit` Command
 
 ```txt
-Edit a JSON (RFC 6902) patch, by editing a patched version of the input using a text editor
+Edit or create a JSON (RFC 6902) patch, by editing a patched version of the input using a text editor
 
 Usage: json-patch edit [OPTIONS] --patch <PATCH> <INPUT>
 
 Arguments:
   <INPUT>
 
+
 Options:
-  -w, --watch            Enable live editing of the patch file
+  -w, --watch
+          Enable live editing of the patch file
+
   -p, --patch <PATCH>
-  -e, --editor <EDITOR>  [default: vim]
-  -h, --help             Print help
+          Path to JSON patch file.
+
+          If the patch file does not yet exist, this command will create a new one.
+
+  -e, --editor <EDITOR>
+          [default: vim]
+
+  -h, --help
+          Print help (see a summary with '-h')
 ```

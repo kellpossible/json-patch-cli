@@ -18,7 +18,7 @@ enum Command {
     Diff(DiffCommand),
     /// Apply a JSON (RFC 6902) patch.
     Apply(ApplyCommand),
-    /// Edit a JSON (RFC 6902) patch, by editing a patched version of the input using a text editor.
+    /// Edit or create a JSON (RFC 6902) patch, by editing a patched version of the input using a text editor.
     Edit(EditCommand),
     /// Generate command line completions script.
     Completions(CompletionsCommand),
@@ -77,6 +77,9 @@ struct EditCommand {
     /// Enable live editing of the patch file.
     #[arg(short, long)]
     watch: bool,
+    /// Path to JSON patch file.
+    ///
+    /// If the patch file does not yet exist, this command will create a new one.
     #[arg(short, long)]
     patch: PathBuf,
     #[arg(short, long, default_value = "vim")]
@@ -101,12 +104,21 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
     let path = dir.path().join("patched.json");
     let path = &path;
 
-    let patched = apply_impl(ApplyCommand {
-        input: command.input.clone(),
-        patch: command.patch.clone(),
-    })?;
-
-    let old_patch = std::fs::read_to_string(&command.patch).context("Error reading patch file")?;
+    let (patched, old_patch) =
+        if std::fs::exists(&command.patch).context("Error checking whether patch file exists")? {
+            let patched = apply_impl(ApplyCommand {
+                input: command.input.clone(),
+                patch: command.patch.clone(),
+            })?;
+            let old_patch =
+                std::fs::read_to_string(&command.patch).context("Error reading patch file")?;
+            (patched, old_patch)
+        } else {
+            (
+                std::fs::read_to_string(&command.input).context("Error reading input")?,
+                String::new(),
+            )
+        };
 
     std::fs::write(&path, patched)?;
 
