@@ -1,6 +1,6 @@
 use console::{style, Style};
-use std::path::PathBuf;
 use std::process::Stdio;
+use std::{path::PathBuf, time::Duration};
 
 use anyhow::Context;
 use clap::{CommandFactory, Parser};
@@ -124,19 +124,37 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
 
     std::thread::scope(|s| {
         if command.watch {
-            let (tx, rx) = std::sync::mpsc::channel::<notify::Result<notify::Event>>();
-            notify::recommended_watcher(tx)?;
-            s.spawn::<_, anyhow::Result<()>>(move || loop {
-                if let Err(_) = rx.recv() {
-                    break Ok(());
+            s.spawn(move || {
+                let mut previous_final = None;
+                loop {
+                    std::thread::sleep(Duration::from_secs(1));
+
+                    if let Err(e) = (|| {
+                        let current_final = std::fs::read_to_string(&path)?;
+
+                        if Some(&current_final) == previous_final.as_ref() {
+                            return Ok(());
+                        }
+
+                        log::trace!("Detected change in {path:?}");
+
+                        let new_patch = diff_impl(DiffCommand {
+                            from: command.input.clone(),
+                            to: path.clone(),
+                        })
+                        .context("Error executing diff")?;
+                        std::fs::write(command.patch.clone(), new_patch)?;
+
+                        previous_final = Some(current_final);
+                        anyhow::Ok(())
+                    })() {
+                        log::error!("Error occurred while watching: {e}");
+                    }
                 }
-                let new_patch = diff_impl(DiffCommand {
-                    from: command.input.clone(),
-                    to: path.clone(),
-                })?;
-                std::fs::write(command.patch.clone(), new_patch)?;
             });
         }
+
+        log::debug!("Editing {path:?} with {}", &command.editor);
 
         // Spawn Vim as a child process
         std::process::Command::new(&command.editor)
@@ -150,7 +168,8 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
         let new_patch = diff_impl(DiffCommand {
             from: command.input.clone(),
             to: path.clone(),
-        })?;
+        })
+        .context("Error executing diff")?;
 
         let diff = similar::TextDiff::from_lines(&old_patch, &new_patch);
         for (idx, group) in diff.grouped_ops(3).iter().enumerate() {
@@ -186,7 +205,8 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
 
         std::fs::write(command.patch.clone(), new_patch)?;
 
-        Ok(())
+        // Exit and don't join the threads.
+        std::process::exit(0)
     })
 }
 
@@ -196,6 +216,7 @@ struct CompletionsCommand {
 }
 
 fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let cli = Cli::parse();
     match cli.command {
         Command::Diff(command) => diff(command)?,
