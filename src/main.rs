@@ -120,7 +120,7 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
             )
         };
 
-    std::fs::write(&path, patched)?;
+    std::fs::write(path, patched)?;
 
     std::thread::scope(|s| {
         if command.watch {
@@ -130,7 +130,7 @@ fn edit(command: EditCommand) -> anyhow::Result<()> {
                     std::thread::sleep(Duration::from_secs(1));
 
                     if let Err(e) = (|| {
-                        let current_final = std::fs::read_to_string(&path)?;
+                        let current_final = std::fs::read_to_string(path)?;
 
                         if Some(&current_final) == previous_final.as_ref() {
                             return Ok(());
