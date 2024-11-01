@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Modified version of https://github.com/casey/just/blob/master/bin/package
+# See that project for the license.
+
 set -euxo pipefail
 
 VERSION=${REF#"refs/tags/"}
