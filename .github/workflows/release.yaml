@@ -95,7 +95,7 @@ jobs:
         REF: ${{ github.ref }}
         OS: ${{ matrix.os }}
         TARGET_RUSTFLAGS: ${{ matrix.target_rustflags }}
-      run: ./package
+      run: ./package.sh
       shell: bash
 
     - name: Publish Archive
