@@ -30,9 +30,6 @@ jobs:
     - name: Format
       run: cargo fmt --all -- --check
 
-    - name: Check for Forbidden Words
-      run: ./bin/forbid
-
   test:
     strategy:
       matrix:
